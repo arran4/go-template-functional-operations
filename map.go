@@ -39,8 +39,7 @@ func MapTemplateFunc(slice any, f any) (any, error) {
 		l = av.Len()
 	}
 	ra := make([]reflect.Value, l)
-	var newType reflect.Type = fvfrt
-	toan := reflect.TypeOf(any(nil))
+	var newType = fvfrt
 	for i := 0; i < l; i++ {
 		var r []reflect.Value
 		switch fv.Type().NumIn() {
@@ -68,16 +67,16 @@ func MapTemplateFunc(slice any, f any) (any, error) {
 		if len(r) == 2 && !r[1].IsNil() {
 			return nil, fmt.Errorf("f execution number %d returned: %w", i, r[1].Interface().(error))
 		}
-		rt := reflect.TypeOf(r[0])
+		rt := r[0].Type()
 		if newType == nil {
 			newType = rt
 		} else if rt != newType && !rt.AssignableTo(newType) {
-			rt = toan
+			newType = reflect.TypeOf(any(nil))
 		}
 		ra[i] = r[0]
 	}
 	if newType == nil {
-		return reflect.MakeSlice(reflect.SliceOf(newType), 0, 0), nil
+		newType = reflect.TypeOf(any(nil))
 	}
 	nra := reflect.MakeSlice(reflect.SliceOf(newType), l, l)
 	for i, e := range ra {
