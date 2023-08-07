@@ -7,14 +7,18 @@ import (
 
 func TextFunctions() tt.FuncMap {
 	return map[string]any{
-		"filter": FilterTemplateFunc,
-		"map":    MapTemplateFunc,
+		"filter":    FilterTemplateFunc,
+		"find":      FindTemplateFunc,
+		"findIndex": FindIndexTemplateFunc,
+		"map":       MapTemplateFunc,
 	}
 }
 
 func HtmlFunctions() ht.FuncMap {
 	return map[string]any{
-		"filter": FilterTemplateFunc,
-		"map":    MapTemplateFunc,
+		"filter":    FilterTemplateFunc,
+		"find":      FindTemplateFunc,
+		"findIndex": FindIndexTemplateFunc,
+		"map":       MapTemplateFunc,
 	}
 }

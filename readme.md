@@ -44,7 +44,7 @@ Usage:
 
 ## `filter`
 
-In go: `FilterTemplateFunc`, provided as `map` by `TextFunctions` and `HtmlFunctions`
+In go: `FilterTemplateFunc`, provided as `filter` by `TextFunctions` and `HtmlFunctions`
 
 Definition:
 ```
@@ -61,6 +61,52 @@ func FilterTemplateFunc(slice any, f any) (any, error)
 The return will be:
 * The first result: an array of the same length or smaller as `slice` in the case, or nil if there was an error.
 The output of `f` will be a slice which only contains the values which `f` returned true for `slice`
+* The 2nd result: an error if there was an error: See [errors.go](errors.go) for a complete list.
+
+Usage:
+* `{{ filter $.Data $.Funcs.odd }}`
+
+## `find`
+
+In go: `FindTemplateFunc`, provided as `find` by `TextFunctions` and `HtmlFunctions`
+
+Definition:
+```
+func FindTemplateFunc(slice any, f any) (any, error)
+```
+
+* The first argument `slice` must be a slice (or nil), of any type.
+* Second argument `f` must be a function of these definitions:
+  * `func () bool` 
+  * `func () (bool, error)` 
+  * `func (v any) bool` 
+  * `func (v any) (bool, error)` 
+
+The return will be:
+* The first matching value, or nil
+* The 2nd result: an error if there was an error: See [errors.go](errors.go) for a complete list.
+
+Usage:
+* `{{ filter $.Data $.Funcs.odd }}`
+
+## `findIndex`
+
+In go: `FindIndexTemplateFunc`, provided as `findIndex` by `TextFunctions` and `HtmlFunctions`
+
+Definition:
+```
+func FindIndexTemplateFunc(slice any, f any) (int, error)
+```
+
+* The first argument `slice` must be a slice (or nil), of any type.
+* Second argument `f` must be a function of these definitions:
+  * `func () bool` 
+  * `func () (bool, error)` 
+  * `func (v any) bool` 
+  * `func (v any) (bool, error)` 
+
+The return will be:
+* The first matching index, or -1
 * The 2nd result: an error if there was an error: See [errors.go](errors.go) for a complete list.
 
 Usage:
