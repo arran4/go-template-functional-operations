@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-func MapTemplateFunc(slice any, f any) (any, error) {
+func FilterTemplateFunc(slice any, f any) (any, error) {
 	av := reflect.ValueOf(slice)
 	if av.Kind() != reflect.Slice && av.Kind() != reflect.Invalid {
 		return nil, fmt.Errorf("%w not %s", ErrExpectedFirstParameterToBeSlice, av.Kind())
@@ -22,10 +22,12 @@ func MapTemplateFunc(slice any, f any) (any, error) {
 	default:
 		return nil, ErrInputFuncMustTake0or1Arguments
 	}
-	var fvfrt reflect.Type
 	switch fv.Type().NumOut() {
 	case 1:
-		fvfrt = fv.Type().Out(0)
+		fvfrt := fv.Type().Out(0)
+		if !fvfrt.AssignableTo(reflect.TypeOf(true)) {
+			return nil, fmt.Errorf("%w instead got: %s", ErrExpectedFirstReturnToBeBool, fvfrt)
+		}
 	case 2:
 		fvsrt := fv.Type().Out(1)
 		if !fvsrt.AssignableTo(reflect.TypeOf(error(nil))) {
@@ -38,9 +40,7 @@ func MapTemplateFunc(slice any, f any) (any, error) {
 	if av.Kind() != reflect.Invalid && !av.IsNil() {
 		l = av.Len()
 	}
-	ra := make([]reflect.Value, l)
-	var newType reflect.Type = fvfrt
-	toan := reflect.TypeOf(any(nil))
+	ra := make([]reflect.Value, 0, l)
 	for i := 0; i < l; i++ {
 		var r []reflect.Value
 		switch fv.Type().NumIn() {
@@ -68,18 +68,11 @@ func MapTemplateFunc(slice any, f any) (any, error) {
 		if len(r) == 2 && !r[1].IsNil() {
 			return nil, fmt.Errorf("f execution number %d returned: %w", i, r[1].Interface().(error))
 		}
-		rt := reflect.TypeOf(r[0])
-		if newType == nil {
-			newType = rt
-		} else if rt != newType && !rt.AssignableTo(newType) {
-			rt = toan
+		if b1, b2 := r[0].Interface().(bool); b1 && b2 {
+			ra = append(ra, av.Index(i))
 		}
-		ra[i] = r[0]
 	}
-	if newType == nil {
-		return reflect.MakeSlice(reflect.SliceOf(newType), 0, 0), nil
-	}
-	nra := reflect.MakeSlice(reflect.SliceOf(newType), l, l)
+	nra := reflect.MakeSlice(reflect.SliceOf(fvfpt), len(ra), len(ra))
 	for i, e := range ra {
 		nra.Index(i).Set(e)
 	}
