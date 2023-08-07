@@ -3,14 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/arran4/go-template-functional-operations"
+	"github.com/arran4/go-template-functional-operations/misc"
 	"os"
 	"text/template"
 )
 
 func main() {
-	// Create a template.
 	funcs := map[string]any{
-		"map": funtemplates.MapTemplateFunc,
 		"inc": func(i int) int {
 			return i + 1
 		},
@@ -18,12 +17,13 @@ func main() {
 			return i%2 == 1
 		},
 	}
+	funcs = misc.MergeMaps(funtemplates.TextFunctions(), funcs)
+
 	tmpl := template.Must(template.New("").Funcs(funcs).Parse(`
         {{ map $.Data $.Funcs.inc }}
         {{ map $.Data $.Funcs.odd }}
     `))
 
-	// Create some data to be used in the template.
 	data := struct {
 		Data  []int
 		Funcs map[string]any
@@ -32,7 +32,6 @@ func main() {
 		Funcs: funcs,
 	}
 
-	// Execute the template with the data.
 	err := tmpl.Execute(os.Stdout, data)
 	if err != nil {
 		fmt.Println(err)

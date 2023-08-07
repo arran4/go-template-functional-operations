@@ -15,14 +15,14 @@ var (
 	ErrExpected2ReturnTypes               = errors.New("expected return with 1 or 2 arguments of types (any, error?)")
 )
 
-func MapTemplateFunc(array any, f any) (any, error) {
-	av := reflect.ValueOf(array)
+func MapTemplateFunc(slice any, f any) (any, error) {
+	av := reflect.ValueOf(slice)
 	if av.Kind() != reflect.Slice {
-		return array, fmt.Errorf("%w not %s", ErrExpectedFirstParameterToBeSlice, av.Kind())
+		return slice, fmt.Errorf("%w not %s", ErrExpectedFirstParameterToBeSlice, av.Kind())
 	}
 	fv := reflect.ValueOf(f)
 	if fv.Kind() != reflect.Func {
-		return array, ErrExpected2ndArgumentToBeFunction
+		return slice, ErrExpected2ndArgumentToBeFunction
 	}
 	var fvfpt reflect.Type
 	switch fv.Type().NumIn() {
@@ -30,7 +30,7 @@ func MapTemplateFunc(array any, f any) (any, error) {
 	case 1:
 		fvfpt = fv.Type().In(0)
 	default:
-		return array, ErrInputFuncMustTake0or1Arguments
+		return slice, ErrInputFuncMustTake0or1Arguments
 	}
 	var fvfrt reflect.Type
 	switch fv.Type().NumOut() {
@@ -39,10 +39,10 @@ func MapTemplateFunc(array any, f any) (any, error) {
 	case 2:
 		fvsrt := fv.Type().Out(1)
 		if !fvsrt.AssignableTo(reflect.TypeOf(error(nil))) {
-			return array, fmt.Errorf("%w instead got: %s", ErrExpectedSecondReturnToBeError, fvsrt)
+			return slice, fmt.Errorf("%w instead got: %s", ErrExpectedSecondReturnToBeError, fvsrt)
 		}
 	default:
-		return array, fmt.Errorf("%w got: %d", ErrExpectedSecondArgumentToBeFunction, fv.Type().NumOut())
+		return slice, fmt.Errorf("%w got: %d", ErrExpectedSecondArgumentToBeFunction, fv.Type().NumOut())
 	}
 	l := av.Len()
 	ra := make([]reflect.Value, l)
@@ -64,13 +64,13 @@ func MapTemplateFunc(array any, f any) (any, error) {
 		case 0:
 			r = fv.Call([]reflect.Value{})
 		default:
-			return array, ErrInputFuncMustTake0or1Arguments
+			return slice, ErrInputFuncMustTake0or1Arguments
 		}
 		if r == nil {
 			continue
 		}
 		if len(r) != 1 && len(r) != 2 {
-			return array, fmt.Errorf("f execution number %d returned: %d results %w", i, len(r), ErrExpected2ReturnTypes)
+			return slice, fmt.Errorf("f execution number %d returned: %d results %w", i, len(r), ErrExpected2ReturnTypes)
 		}
 		if len(r) == 2 && !r[1].IsNil() {
 			return nil, fmt.Errorf("f execution number %d returned: %w", i, r[1].Interface().(error))
