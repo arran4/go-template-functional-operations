@@ -7,8 +7,9 @@ import (
 
 func SimpleTextFunctions() tt.FuncMap {
 	return map[string]any{
-		"inc": incTemplateFunc,
-		"odd": oddTemplateFunc,
+		"inc":   incTemplateFunc,
+		"odd":   oddTemplateFunc,
+		"false": falseTemplateFunc,
 	}
 }
 
@@ -25,4 +26,8 @@ func incTemplateFunc(i int) int {
 
 func oddTemplateFunc(i int) bool {
 	return i%2 == 1
+}
+
+func falseTemplateFunc(i int) bool {
+	return false
 }

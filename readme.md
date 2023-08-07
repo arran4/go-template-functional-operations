@@ -26,7 +26,7 @@ Definition:
 func MapTemplateFunc(slice any, f any) (any, error)
 ```
 
-* The first argument `slice` must be a slice, of any type.
+* The first argument `slice` must be a slice (or nil), of any type.
 * Second argument `f` must be a function of these definitions:
   * `func () any` 
   * `func () (any, error)` 
@@ -35,13 +35,7 @@ func MapTemplateFunc(slice any, f any) (any, error)
 
 The return will be:
 * The first result: an array of the same length as `slice` in the case, or nil if there was an error. The output of `f` will be in the appropriate place for each value
-* The 2nd result: an error if there was an error, any one of:
-  * `ErrInputFuncMustTake0or1Arguments` 
-  * `ErrExpectedFirstParameterToBeSlice` 
-  * `ErrExpected2ndArgumentToBeFunction` 
-  * `ErrExpectedSecondReturnToBeError` 
-  * `ErrExpectedSecondArgumentToBeFunction` 
-  * `ErrExpected2ReturnTypes` 
+* The 2nd result: an error if there was an error: See [errors.go](errors.go) for a complete list.
 
 # Usage:
 
