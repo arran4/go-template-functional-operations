@@ -95,9 +95,7 @@ func TestFilterTemplateFunc(t *testing.T) {
 			"NotAnError": func() (int, int) {
 				return 0, 2
 			},
-			"NoReturns": func() {
-				return
-			},
+			"NoReturns": func() {},
 		},
 	}
 
