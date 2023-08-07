@@ -18,6 +18,27 @@ This library exists in lieu of generic support in `text/template` or `html/templ
 
 # Template Function definitions
 
+[interface.go](interface.go):
+```go
+func TextFunctions() tt.FuncMap {
+	return map[string]any{
+		"filter":    FilterTemplateFunc,
+		"find":      FindTemplateFunc,
+		"findIndex": FindIndexTemplateFunc,
+		"map":       MapTemplateFunc,
+	}
+}
+
+func HtmlFunctions() ht.FuncMap {
+	return map[string]any{
+		"filter":    FilterTemplateFunc,
+		"find":      FindTemplateFunc,
+		"findIndex": FindIndexTemplateFunc,
+		"map":       MapTemplateFunc,
+	}
+}
+```
+
 ## `map`
 
 In go: `MapTemplateFunc`, provided as `map` by `TextFunctions` and `HtmlFunctions`
