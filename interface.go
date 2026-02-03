@@ -1,7 +1,7 @@
 package funtemplates
 
 import (
-	ht "text/template"
+	ht "html/template"
 	tt "text/template"
 )
 
