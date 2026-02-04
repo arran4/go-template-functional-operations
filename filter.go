@@ -14,14 +14,39 @@ func FilterTemplateFunc(slice any, f any) (any, error) {
 	if fv.Kind() != reflect.Func {
 		return nil, ErrExpected2ndArgumentToBeFunction
 	}
-	var fvfpt reflect.Type
-	switch fv.Type().NumIn() {
-	case 0:
-	case 1:
-		fvfpt = fv.Type().In(0)
-	default:
+
+	numIn := fv.Type().NumIn()
+	if numIn > 1 {
 		return nil, ErrInputFuncMustTake0or1Arguments
 	}
+
+	var elemType reflect.Type
+	checkInside := false
+
+	if numIn == 1 {
+		elemType = fv.Type().In(0)
+		if av.Kind() == reflect.Slice {
+			sliceElemType := av.Type().Elem()
+			// If the slice contains interfaces, we cannot statically guarantee that
+			// the dynamic values inside are assignable to the function argument type.
+			// We must check inside the loop to provide a friendly error instead of panicking,
+			// or to allow valid assignments if the types align (e.g. interface{} -> interface{}).
+			if sliceElemType.Kind() == reflect.Interface {
+				checkInside = true
+			} else if !sliceElemType.AssignableTo(elemType) {
+				return nil, fmt.Errorf("item 0 not assignable to: %s", elemType)
+			}
+		}
+	} else {
+		// NumIn == 0
+		if av.Kind() == reflect.Slice {
+			elemType = av.Type().Elem()
+		} else {
+			// av is Invalid (nil)
+			elemType = reflect.TypeOf((*interface{})(nil)).Elem()
+		}
+	}
+
 	switch fv.Type().NumOut() {
 	case 1:
 		fvfrt := fv.Type().Out(0)
@@ -30,51 +55,72 @@ func FilterTemplateFunc(slice any, f any) (any, error) {
 		}
 	case 2:
 		fvsrt := fv.Type().Out(1)
-		if !fvsrt.AssignableTo(reflect.TypeOf(error(nil))) {
+		errorType := reflect.TypeOf((*error)(nil)).Elem()
+		if !fvsrt.AssignableTo(errorType) {
 			return nil, fmt.Errorf("%w instead got: %s", ErrExpectedSecondReturnToBeError, fvsrt)
+		}
+		fvfrt := fv.Type().Out(0)
+		if !fvfrt.AssignableTo(reflect.TypeOf(true)) {
+			return nil, fmt.Errorf("%w instead got: %s", ErrExpectedFirstReturnToBeBool, fvfrt)
 		}
 	default:
 		return nil, fmt.Errorf("%w got: %d", ErrExpected1Or2ReturnTypes, fv.Type().NumOut())
 	}
+
 	l := 0
 	if av.Kind() != reflect.Invalid && !av.IsNil() {
 		l = av.Len()
 	}
-	ra := make([]reflect.Value, 0, l)
+
+	// Create result slice with correct type and capacity
+	nra := reflect.MakeSlice(reflect.SliceOf(elemType), 0, l)
+
+	// Pre-allocate args
+	var args []reflect.Value
+	if numIn == 1 {
+		args = make([]reflect.Value, 1)
+	}
+
 	for i := 0; i < l; i++ {
 		var r []reflect.Value
-		switch fv.Type().NumIn() {
-		case 1:
-			if fvfpt != nil {
-				ev := av.Index(i)
-				if !ev.Type().AssignableTo(fvfpt) {
-					return nil, fmt.Errorf("item %d not assignable to: %s", i, fvfpt)
+		if numIn == 1 {
+			ev := av.Index(i)
+			arg := ev
+			if checkInside {
+				if ev.Kind() == reflect.Interface {
+					if ev.IsNil() {
+						switch elemType.Kind() {
+						case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Func, reflect.Interface:
+							arg = reflect.Zero(elemType)
+						default:
+							return nil, fmt.Errorf("item %d is nil, not assignable to: %s", i, elemType)
+						}
+					} else {
+						arg = ev.Elem()
+					}
 				}
-				r = fv.Call([]reflect.Value{ev})
-				break
+				if !arg.Type().AssignableTo(elemType) {
+					return nil, fmt.Errorf("item %d not assignable to: %s", i, elemType)
+				}
 			}
-			fallthrough
-		case 0:
-			r = fv.Call([]reflect.Value{})
-		default:
-			return nil, ErrInputFuncMustTake0or1Arguments
+			args[0] = arg
+			r = fv.Call(args)
+		} else {
+			r = fv.Call(nil)
 		}
-		if r == nil {
-			continue
-		}
-		if len(r) != 1 && len(r) != 2 {
-			return nil, fmt.Errorf("f execution number %d returned: %d results %w", i, len(r), ErrExpected1Or2ReturnTypes)
-		}
+
 		if len(r) == 2 && !r[1].IsNil() {
 			return nil, fmt.Errorf("f execution number %d returned: %w", i, r[1].Interface().(error))
 		}
-		if b1, b2 := r[0].Interface().(bool); b1 && b2 {
-			ra = append(ra, av.Index(i))
+
+		if r[0].Bool() {
+			if numIn == 1 {
+				nra = reflect.Append(nra, args[0])
+			} else {
+				nra = reflect.Append(nra, av.Index(i))
+			}
 		}
 	}
-	nra := reflect.MakeSlice(reflect.SliceOf(fvfpt), len(ra), len(ra))
-	for i, e := range ra {
-		nra.Index(i).Set(e)
-	}
+
 	return nra.Interface(), nil
 }

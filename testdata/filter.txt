@@ -1,0 +1,34 @@
+-- simple_int_slice/input.json --
+{
+    "DataInts": [1, 2, 3, 4, 5]
+}
+-- simple_int_slice/template.tmpl --
+{{ filter .DataInts $.Funcs.odd }}
+-- simple_int_slice/output.txt --
+[1 3 5]
+
+-- interface_slice/input.json --
+{
+    "DataAny": [1, 2, 3, 4, 5]
+}
+-- interface_slice/template.tmpl --
+{{ filter .DataAny $.Funcs.odd }}
+-- interface_slice/output.txt --
+[1 3 5]
+
+-- empty_slice/input.json --
+{
+    "DataInts": []
+}
+-- empty_slice/template.tmpl --
+{{ filter .DataInts $.Funcs.odd }}
+-- empty_slice/output.txt --
+[]
+
+-- nil_slice/input.json --
+{
+}
+-- nil_slice/template.tmpl --
+{{ filter .DataInts $.Funcs.odd }}
+-- nil_slice/output.txt --
+[]
