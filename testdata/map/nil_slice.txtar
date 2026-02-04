@@ -1,0 +1,8 @@
+-- input.json --
+{
+  "DataInts": [1, 2, 3, 4]
+}
+-- template.tmpl --
+{{ map nil .Funcs.false }}
+-- expect.txt --
+[]
