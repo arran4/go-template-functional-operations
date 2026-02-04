@@ -3,6 +3,7 @@ package funtemplates
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -11,7 +12,6 @@ import (
 	"github.com/arran4/go-template-functional-operations/misc"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/txtar"
-	"gopkg.in/yaml.v3"
 )
 
 //go:embed testdata/*.txtar
@@ -47,10 +47,12 @@ func TestFindIndexTxtar(t *testing.T) {
 
 			for _, f := range archive.Files {
 				switch f.Name {
-				case "input.yaml":
-					if err := yaml.Unmarshal(f.Data, &inputData); err != nil {
-						t.Fatalf("failed to unmarshal input.yaml: %v", err)
+				case "input.json":
+					if err := json.Unmarshal(f.Data, &inputData); err != nil {
+						t.Fatalf("failed to unmarshal input.json: %v", err)
 					}
+					// Convert float64 to int for convenience in tests
+					inputData = convertFloatsToInts(inputData).(map[string]any)
 				case "template.tmpl":
 					tmplStr = string(f.Data)
 				case "output.txt":
@@ -78,5 +80,27 @@ func TestFindIndexTxtar(t *testing.T) {
 				t.Errorf("template execution mismatch (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func convertFloatsToInts(i interface{}) interface{} {
+	switch v := i.(type) {
+	case map[string]interface{}:
+		for k, val := range v {
+			v[k] = convertFloatsToInts(val)
+		}
+		return v
+	case []interface{}:
+		for k, val := range v {
+			v[k] = convertFloatsToInts(val)
+		}
+		return v
+	case float64:
+		if v == float64(int(v)) {
+			return int(v)
+		}
+		return v
+	default:
+		return v
 	}
 }

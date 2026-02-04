@@ -1,5 +1,7 @@
--- input.yaml --
-DataInts: [1, 2, 3, 4, 5]
+-- input.json --
+{
+    "DataInts": [1, 2, 3, 4, 5]
+}
 -- template.tmpl --
 {{ findIndex .DataInts .Funcs.alwaysTrue }}
 -- output.txt --
