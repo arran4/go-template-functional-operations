@@ -1,0 +1,8 @@
+-- input.json --
+{
+  "DataInts": [1, 2, 3, 4]
+}
+-- template.tmpl --
+{{ map .DataInts .Funcs.false }}
+-- expect.txt --
+[false false false false]
