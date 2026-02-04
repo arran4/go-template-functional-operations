@@ -52,36 +52,52 @@ func FindIndexTemplateFunc(slice any, f any) (int, error) {
 	if av.Kind() != reflect.Invalid && !av.IsNil() {
 		l = av.Len()
 	}
-	for i := 0; i < l; i++ {
-		var r []reflect.Value
-		switch fv.Type().NumIn() {
-		case 1:
-			if fvfpt != nil {
+	switch fv.Type().NumIn() {
+	case 1:
+		if fvfpt != nil {
+			for i := 0; i < l; i++ {
 				ev := av.Index(i)
+				if ev.Kind() == reflect.Interface && !ev.IsNil() {
+					ev = ev.Elem()
+				}
 				if !ev.Type().AssignableTo(fvfpt) {
 					return -1, fmt.Errorf("item %d not assignable to: %s", i, fvfpt)
 				}
-				r = fv.Call([]reflect.Value{ev})
-				break
+				r := fv.Call([]reflect.Value{ev})
+				if r == nil {
+					continue
+				}
+				if len(r) != 1 && len(r) != 2 {
+					return -1, fmt.Errorf("f execution number %d returned: %d results %w", i, len(r), ErrExpected1Or2ReturnTypes)
+				}
+				if len(r) == 2 && !r[1].IsNil() {
+					return -1, fmt.Errorf("f execution number %d returned: %w", i, r[1].Interface().(error))
+				}
+				if b1, b2 := r[0].Interface().(bool); b1 && b2 {
+					return i, nil
+				}
 			}
-			fallthrough
-		case 0:
-			r = fv.Call([]reflect.Value{})
-		default:
-			return -1, ErrInputFuncMustTake0or1Arguments
+			return -1, nil
 		}
-		if r == nil {
-			continue
+		fallthrough
+	case 0:
+		for i := 0; i < l; i++ {
+			r := fv.Call([]reflect.Value{})
+			if r == nil {
+				continue
+			}
+			if len(r) != 1 && len(r) != 2 {
+				return -1, fmt.Errorf("f execution number %d returned: %d results %w", i, len(r), ErrExpected1Or2ReturnTypes)
+			}
+			if len(r) == 2 && !r[1].IsNil() {
+				return -1, fmt.Errorf("f execution number %d returned: %w", i, r[1].Interface().(error))
+			}
+			if b1, b2 := r[0].Interface().(bool); b1 && b2 {
+				return i, nil
+			}
 		}
-		if len(r) != 1 && len(r) != 2 {
-			return -1, fmt.Errorf("f execution number %d returned: %d results %w", i, len(r), ErrExpected1Or2ReturnTypes)
-		}
-		if len(r) == 2 && !r[1].IsNil() {
-			return -1, fmt.Errorf("f execution number %d returned: %w", i, r[1].Interface().(error))
-		}
-		if b1, b2 := r[0].Interface().(bool); b1 && b2 {
-			return i, nil
-		}
+		return -1, nil
+	default:
+		return -1, ErrInputFuncMustTake0or1Arguments
 	}
-	return -1, nil
 }
