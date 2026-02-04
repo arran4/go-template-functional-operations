@@ -1,0 +1,8 @@
+-- input.json --
+{
+  "DataInts": [1, 2, 3, 4]
+}
+-- template.tmpl --
+{{ map "asdfasdf" .Funcs.false }}
+-- expect.txt --
+template: :1:3: executing "" at <map "asdfasdf" .Funcs.false>: error calling map: expected first parameter to be an slice not string
