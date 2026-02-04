@@ -85,12 +85,25 @@ func FilterTemplateFunc(slice any, f any) (any, error) {
 		var r []reflect.Value
 		if numIn == 1 {
 			ev := av.Index(i)
+			arg := ev
 			if checkInside {
-				if !ev.Type().AssignableTo(elemType) {
+				if ev.Kind() == reflect.Interface {
+					if ev.IsNil() {
+						switch elemType.Kind() {
+						case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Func, reflect.Interface:
+							arg = reflect.Zero(elemType)
+						default:
+							return nil, fmt.Errorf("item %d is nil, not assignable to: %s", i, elemType)
+						}
+					} else {
+						arg = ev.Elem()
+					}
+				}
+				if !arg.Type().AssignableTo(elemType) {
 					return nil, fmt.Errorf("item %d not assignable to: %s", i, elemType)
 				}
 			}
-			args[0] = ev
+			args[0] = arg
 			r = fv.Call(args)
 		} else {
 			r = fv.Call(nil)
@@ -101,7 +114,11 @@ func FilterTemplateFunc(slice any, f any) (any, error) {
 		}
 
 		if r[0].Bool() {
-			nra = reflect.Append(nra, av.Index(i))
+			if numIn == 1 {
+				nra = reflect.Append(nra, args[0])
+			} else {
+				nra = reflect.Append(nra, av.Index(i))
+			}
 		}
 	}
 
