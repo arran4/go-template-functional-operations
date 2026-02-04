@@ -1,0 +1,6 @@
+-- input.yaml --
+DataInts: [1, 2, 3, 4, 5]
+-- template.tmpl --
+{{ findIndex .DataInts .Funcs.even }}
+-- output.txt --
+1

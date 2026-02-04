@@ -57,6 +57,9 @@ func FindIndexTemplateFunc(slice any, f any) (int, error) {
 		if fvfpt != nil {
 			for i := 0; i < l; i++ {
 				ev := av.Index(i)
+				if ev.Kind() == reflect.Interface && !ev.IsNil() {
+					ev = ev.Elem()
+				}
 				if !ev.Type().AssignableTo(fvfpt) {
 					return -1, fmt.Errorf("item %d not assignable to: %s", i, fvfpt)
 				}
